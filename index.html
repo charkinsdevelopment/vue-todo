@@ -1,0 +1,151 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel = "stylesheet" type = "text/css" href = "https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css" />
+</head>
+<style>
+.done {text-decoration: line-through;}
+.commands {position: absolute;
+    right: 10px;}
+.completeDate {margin-left:15px;}
+</style>
+<body>
+   <section class="hero is-medium is-primary is-bold">
+      <div class="hero-body">
+         <div class="container">
+            <h1 class="title">
+               To Do With Vue
+            </h1>
+            <h2 class="subtitle">
+               A simple to do list implemented with vue.js and local storage so you can keep track of what matters and what is done!
+            </h2>
+         </div>
+      </div>
+   </section>
+   <section class="is-small">
+      <div class="container">
+         <div id="ListApp">
+            <nav class="panel">
+               <p class="panel-heading">
+                  {{title}}
+               </p>
+               <div class="panel-block">
+                  <div class="field has-addons">
+                     <div class="control">
+                        <input class="input" type="text" placeholder="Add a new task" v-model="userInput">
+                     </div>
+                     <div class="control">
+                        <a class="button is-primary" v-on:click="addToDo" v-on:keyup.enter="addToDo">
+                        Add
+                        </a>
+                     </div>
+                  </div>
+               </div>
+               <div class="panel-block">
+                  <div class="field has-addons">
+                     <div class="control">
+                        <input class="input" type="text" placeholder="Find a todo" v-model="search">
+                     </div>
+                     <div class="control">
+                        <a class="button is-info">
+                        Search
+                        </a>
+                     </div>
+                  </div>
+               </div>
+               <div v-if="isLoaded">
+					<div  v-if="todos.length > 0">
+                  <div class="panel-block" v-for="todo in filteredList">
+                     <span :id="todo.id" v-bind:class="{'done' : todo.complete == true, 'not-done' : todo.complete == false}">
+                     {{ todo.text }}
+                     </span> 
+                     <span v-if="todo.completeDate != null" class="completeDate">{{todo.completeDate}}</span>
+                     <div class="commands">
+                        <div class="button is-info" href="#" v-on:click="deleteToDo(todo.id)">Delete</div>
+                        <div class="button is-primary" href="#" v-on:click="completeToDo(todo.id)">Done</div>
+                     </div>
+                  </div>
+				  </div>
+                  <div v-else class="panel-block">You have nothing to do today...</div>
+               </div>
+               <div v-else class="panel-block">Loading...</div>
+            </nav>
+         </div>
+      </div>
+   </section>
+</body>
+
+<script>
+	var app = new Vue({
+    el: '#ListApp',
+    data: {
+        title: 'My Stuff - ' + new Date().toLocaleString(),
+        isLoaded: false,
+        userInput: '',
+		search: '',
+        todos: [{text: 'test to do item', complete: false, completeDate: null}]
+    },
+    methods: {
+        addToDo: function() {
+			if(this.userInput == '') return;
+            var maxId = 0;
+            this.todos.map(function(obj) {
+                maxId = obj.id + 1;
+            });
+            var todo = {
+                id: maxId,
+                text: this.userInput,
+                complete: false,
+                completeDate: null
+            };
+            this.todos.push(todo);
+            this.setLocalStorage();
+			this.userInput = '';
+        },
+        deleteToDo: function(idToDelete) {
+            this.todos = this.todos.filter(item => item.id !== idToDelete);
+            this.setLocalStorage();
+        },
+        completeToDo: function(idToComplete) {
+            console.log(idToComplete);
+            var itemToComplete = this.todos.find(x => x.id === idToComplete);
+            console.log(itemToComplete);
+            itemToComplete.complete = true;
+
+            var dateObj = new Date();
+            var month = dateObj.getUTCMonth() + 1; //months from 1-12
+            var day = dateObj.getUTCDate();
+            var year = dateObj.getUTCFullYear();
+
+            var newdate = month + "/" + day + "/" + year;
+            itemToComplete.completeDate = newdate;
+            this.setLocalStorage();
+        },
+        setLocalStorage: function() {
+            localStorage.setItem("todos", JSON.stringify(this.todos));
+        },
+        getLocalStorage: function() {
+            var data = localStorage.getItem("todos");
+			if(data == null || data == undefined){
+				return;
+			}
+            this.todos = JSON.parse(data);
+        }
+	},
+	computed: {
+		filteredList() {
+			return this.todos.filter(todo => {
+				return todo.text.toLowerCase().includes(this.search.toLowerCase())
+			})
+		}
+	}
+});
+	
+	document.addEventListener("DOMContentLoaded", function(){		
+		app.getLocalStorage();
+		app.isLoaded = true;
+	});
+	
+</script>
+</html>
